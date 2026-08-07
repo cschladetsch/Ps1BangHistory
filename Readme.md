@@ -1,28 +1,28 @@
 # PsBangHistory
 
-Bash-style bang-history expansion for PowerShell, using `~` instead of `!` (since `!` isn't available as a bare sigil in PowerShell).
+Bash-style bang-history expansion for PowerShell, using `@` instead of `!` (since `!` isn't available as a bare sigil in PowerShell, and ~ clashes with $HOME).
 
 ## Syntax
 
 | Token          | Meaning                                      | Bash equivalent |
 |----------------|-----------------------------------------------|------------------|
-| `~~`           | last command                                  | `!!`             |
-| `~$`           | last word of last command                     | `!$`             |
-| `~*`           | all args of last command                      | `!*`             |
-| `~-N`          | Nth-previous command                          | `!-N`            |
-| `~-N:$`        | last word of Nth-previous command             | `!-N:$`          |
-| `~-N:^`        | first arg of Nth-previous command             | `!-N:^`          |
-| `~-N:*`        | all args of Nth-previous command              | `!-N:*`          |
-| `~-N:K`        | word K (0 = command name) of Nth-previous cmd | `!-N:K`          |
-| `~-N:A-B`      | word range A..B of Nth-previous command       | `!-N:A-B`        |
-| `~N`           | history event N by absolute Id                | `!N`             |
-| `~N:$` etc     | same selectors, applied to event N            | `!N:$` etc       |
-| `~[text]`      | most recent command containing `text` anywhere | `!?text?`       |
-| `~[text]:$` etc | same selectors, applied to the matched command | `!text:$` etc   |
-| `~word`        | most recent command *starting with* `word`   | `!word`          |
-| `~word:$` etc  | same selectors, applied to the prefix-matched command | `!word:$` etc |
-| `~-N:K*`       | words K..end of Nth-previous command          | `!-N:K*`         |
-| `~~:gs/old/new/` | last command, every `old` replaced with `new` | `!!:gs/old/new/` |
+| `@@`           | last command                                  | `!!`             |
+| `@$`           | last word of last command                     | `!$`             |
+| `@*`           | all args of last command                      | `!*`             |
+| `@-N`          | Nth-previous command                          | `!-N`            |
+| `@-N:$`        | last word of Nth-previous command             | `!-N:$`          |
+| `@-N:^`        | first arg of Nth-previous command             | `!-N:^`          |
+| `@-N:*`        | all args of Nth-previous command              | `!-N:*`          |
+| `@-N:K`        | word K (0 = command name) of Nth-previous cmd | `!-N:K`          |
+| `@-N:A-B`      | word range A..B of Nth-previous command       | `!-N:A-B`        |
+| `@N`           | history event N by absolute Id                | `!N`             |
+| `@N:$` etc     | same selectors, applied to event N            | `!N:$` etc       |
+| `@[text]`      | most recent command containing `text` anywhere | `!?text?`       |
+| `@[text]:$` etc | same selectors, applied to the matched command | `!text:$` etc   |
+| `@word`        | most recent command *starting with* `word`   | `!word`          |
+| `@word:$` etc  | same selectors, applied to the prefix-matched command | `!word:$` etc |
+| `@-N:K*`       | words K..end of Nth-previous command          | `!-N:K*`         |
+| `@@:gs/old/new/` | last command, every `old` replaced with `new` | `!!:gs/old/new/` |
 | `^old^new^`    | last command, first `old` replaced with `new` | `^old^new^`      |
 
 ## Install
@@ -85,20 +85,20 @@ Bash's `!#` (the not-yet-submitted current line) has no equivalent here — ther
 **Rerun the last command**
 ```powershell
 PS> docker build -t myapp .
-PS> ~~
+PS> @@
 ```
 
 **Reuse an argument across a different command**
 ```powershell
 PS> vim server.config.json
-PS> git add ~$
+PS> git add @$
 # expands to: git add server.config.json
 ```
 
 **Reuse every argument from the last command**
 ```powershell
 PS> docker run -d --name api -p 8080:80 nginx
-PS> echo ~*
+PS> echo @*
 # expands to: echo -d --name api -p 8080:80 nginx
 ```
 
@@ -141,7 +141,7 @@ PS> ~git
 **Global substitution across an entire command**
 ```powershell
 PS> docker build -t myapp:v1.2.3 .
-PS> ~~:gs/v1.2.3/v1.2.4/
+PS> @:gs/v1.2.3/v1.2.4/
 # expands to: docker build -t myapp:v1.2.4 .
 ```
 
