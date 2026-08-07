@@ -62,11 +62,11 @@ Show-BangHistoryHelp        # quick cheat-sheet table, printed directly
 Get-Help Expand-BangHistory -Full   # full comment-based help with examples
 ```
 
-`Show-BangHistoryHelp` is a normal function call — type it exactly as shown, not as a `~` token, or it'll be treated as a history search instead of a help request.
+Show-BangHistoryHelp` is a normal function call — type it exactly as shown, not as a `@` token, or it'll be treated as a history search instead of a help request.
 
 ## Behaviour
 
-Pressing Enter on a line containing a `~` token expands it into the buffer and stops — it does not execute. Press Enter again on the now-expanded (token-free) line to run it. This is a deliberate preview/confirm step, not a bug.
+Pressing Enter on a line containing a `@` token expands it into the buffer and stops — it does not execute. Press Enter again on the now-expanded (token-free) line to run it. This is a deliberate preview/confirm step, not a bug.
 
 **If an expansion resolves to the wrong thing**, press **Ctrl+Z** (PowerShell's default Undo binding) to revert the buffer back to exactly what you typed, fix the token, and try again.
 
@@ -106,12 +106,12 @@ PS> echo @*
 ```powershell
 PS> docker run -d --name api-server -p 8080:80 nginx
 PS> ...ten commands later...
-PS> docker logs ~[api-server]:2
+PS> docker logs @[api-server]:2
 ```
 
 **The safety net — preview before anything destructive runs**
 ```powershell
-PS> rm -Recurse ~-5:*
+PS> rm -Recurse @-5:*
 # buffer shows the fully expanded path before anything executes
 # e.g. rm -Recurse -Force C:\builds\output\*
 # only runs on the second Enter
@@ -120,9 +120,9 @@ PS> rm -Recurse ~-5:*
 **Absolute recall by history id**
 ```powershell
 PS> Get-BangHistoryBuffer | Select-Object Id, CommandLine | Select-Object -Last 20
-PS> ~142
+PS> @142
 ```
-Note: this `Id` is line-position in the persisted history file, not the `Id` shown by `Get-History` — the two numbering schemes differ once `~N` is reading cross-session history. Always check ids via `Get-BangHistoryBuffer`, not `Get-History`.
+Note: this `Id` is line-position in the persisted history file, not the `Id` shown by `Get-History` — the two numbering schemes differ once `@N` is reading cross-session history. Always check ids via `Get-BangHistoryBuffer`, not `Get-History`.
 
 **Quick fix a typo/detail and re-run without retyping the whole command**
 ```powershell
@@ -134,7 +134,7 @@ PS> ^mian^main^
 **Prefix match — bash's actual !string behavior**
 ```powershell
 PS> git commit -m "fix bug"
-PS> ~git
+PS> @git
 # most recent command starting with "git" — not just containing it anywhere
 ```
 
