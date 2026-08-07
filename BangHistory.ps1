@@ -1,33 +1,33 @@
 #requires -Module PSReadLine
 
-# ~ -based bash bang-history emulation for PowerShell.
+# @ -based bash bang-history emulation for PowerShell.
 #
 # Supported syntax:
-#   ~~              last command                 (bash !!)
-#   ~$              last word of last command     (bash !$)
-#   ~*              all args of last command      (bash !*)
-#   ~-N             Nth-previous command           (bash !-N)
-#   ~-N:$           last word of Nth-previous cmd
-#   ~-N:^           first arg of Nth-previous cmd
-#   ~-N:*           all args of Nth-previous cmd
-#   ~-N:K           word K (0=command name) of Nth-previous cmd
-#   ~-N:A-B         word range A..B of Nth-previous cmd
-#   ~N              history event N by absolute Id, zero-based     (bash !N)
-#   ~N:$ / :^ / :* / :K / :A-B   same selectors, applied to event N
-#   ~[text]         most recent cmd containing "text"   (bash !?text?, substring anywhere)
-#   ~[text]:$ / :^ / :* / :K / :A-B   same selectors, applied to matched command
-#   ~word           most recent cmd starting with "word" (bash !word, prefix match)
-#   ~word:$ etc     same selectors, applied to the prefix-matched command
-#   ~-N:K*          words K..end of Nth-previous command (bash !-N:K*)
-#   ~~:gs/old/new/  last command with every "old" replaced by "new" (bash !!:gs/old/new/)
+#   @@              last command                 (bash !!)
+#   @$              last word of last command     (bash !$)
+#   @*              all args of last command      (bash !*)
+#   @-N             Nth-previous command           (bash !-N)
+#   @-N:$           last word of Nth-previous cmd
+#   @-N:^           first arg of Nth-previous cmd
+#   @-N:*           all args of Nth-previous cmd
+#   @-N:K           word K (0=command name) of Nth-previous cmd
+#   @-N:A-B         word range A..B of Nth-previous cmd
+#   @N              history event N by absolute Id, zero-based     (bash !N)
+#   @N:$ / :^ / :* / :K / :A-B   same selectors, applied to event N
+#   @[text]         most recent cmd containing "text"   (bash !?text?, substring anywhere)
+#   @[text]:$ / :^ / :* / :K / :A-B   same selectors, applied to matched command
+#   @word           most recent cmd starting with "word" (bash !word, prefix match)
+#   @word:$ etc     same selectors, applied to the prefix-matched command
+#   @-N:K*          words K..end of Nth-previous command (bash !-N:K*)
+#   @@:gs/old/new/  last command with every "old" replaced by "new" (bash !!:gs/old/new/)
 #                   note: neither "old" nor "new" may contain a literal "/"
 #   ^old^new^       quick substitution: last command, first "old" replaced by "new", re-run
 #
-# ~# (bash's "current typed line so far") is not supported — there's no
+# @# (bash's "current typed line so far") is not supported — there's no
 # reliable hook for the not-yet-submitted buffer text outside the Enter
 # handler itself.
 #
-# Behaviour: pressing Enter on a line containing ~ tokens expands them into
+# Behaviour: pressing Enter on a line containing @ tokens expands them into
 # the buffer and does NOT run the line (preview step). Press Enter again to
 # actually execute. Dot-source this from $PROFILE.
 
@@ -107,25 +107,25 @@ function Get-BangCommandLine {
     $buffer = @(Get-BangHistoryBuffer)
     if ($buffer.Count -eq 0) { return $null }
 
-    if ($Ref -eq '~~') {
+    if ($Ref -eq '@@') {
         $h = $buffer[-1]
     }
-    elseif ($Ref -match '^~-(\d+)$') {
+    elseif ($Ref -match '^@-(\d+)$') {
         $n = [int]$Matches[1]
         $idx = $buffer.Count - $n
         if ($idx -lt 0) { return $null }
         $h = $buffer[$idx]
     }
-    elseif ($Ref -match '^~(\d+)$') {
+    elseif ($Ref -match '^@(\d+)$') {
         $id = [int]$Matches[1]
         $h = $buffer | Where-Object { $_.Id -eq $id } | Select-Object -Last 1
     }
-    elseif ($Ref -match '^~\[(.+)\]$') {
+    elseif ($Ref -match '^@\[(.+)\]$') {
         $needle = $Matches[1]
         $h = $buffer | Where-Object { $_.CommandLine -like "*$needle*" } |
              Select-Object -Last 1
     }
-    elseif ($Ref -match '^~([A-Za-z_][\w.\-\/]*)$') {
+    elseif ($Ref -match '^@([A-Za-z_][\w.\-\/]*)$') {
         $prefix = $Matches[1]
         $h = $buffer | Where-Object { $_.CommandLine -like "$prefix*" } |
              Select-Object -Last 1
@@ -141,31 +141,31 @@ function Get-BangCommandLine {
 function Show-BangHistoryHelp {
     <#
     .SYNOPSIS
-        Prints a quick reference table of all ~ bang-history tokens.
+        Prints a quick reference table of all @ bang-history tokens.
     .DESCRIPTION
-        Run this directly at the prompt — it's a normal command, not a ~
+        Run this directly at the prompt — it's a normal command, not a @
         token itself, so it isn't intercepted or expanded.
     .EXAMPLE
         Show-BangHistoryHelp
     #>
     $rows = @(
-        [pscustomobject]@{ Token = '~~';             Meaning = 'last command';                              Bash = '!!' }
-        [pscustomobject]@{ Token = '~$';              Meaning = 'last word of last command';                 Bash = '!$' }
-        [pscustomobject]@{ Token = '~*';              Meaning = 'all args of last command';                  Bash = '!*' }
-        [pscustomobject]@{ Token = '~-N';             Meaning = 'Nth-previous command';                      Bash = '!-N' }
-        [pscustomobject]@{ Token = '~-N:$';           Meaning = 'last word of Nth-previous command';         Bash = '!-N:$' }
-        [pscustomobject]@{ Token = '~-N:^';           Meaning = 'first arg of Nth-previous command';         Bash = '!-N:^' }
-        [pscustomobject]@{ Token = '~-N:*';           Meaning = 'all args of Nth-previous command';          Bash = '!-N:*' }
-        [pscustomobject]@{ Token = '~-N:K';           Meaning = 'word K (0=cmd name) of Nth-previous cmd';   Bash = '!-N:K' }
-        [pscustomobject]@{ Token = '~-N:A-B';         Meaning = 'word range A..B of Nth-previous command';   Bash = '!-N:A-B' }
-        [pscustomobject]@{ Token = '~-N:K*';          Meaning = 'words K..end of Nth-previous command';      Bash = '!-N:K*' }
-        [pscustomobject]@{ Token = '~N';              Meaning = 'history event N by absolute Id';            Bash = '!N' }
-        [pscustomobject]@{ Token = '~N:$ etc';        Meaning = 'same selectors, applied to event N';        Bash = '!N:$ etc' }
-        [pscustomobject]@{ Token = '~[text]';         Meaning = 'most recent cmd containing text anywhere';  Bash = '!?text?' }
-        [pscustomobject]@{ Token = '~[text]:$ etc';   Meaning = 'same selectors, applied to matched cmd';    Bash = '!text:$ etc' }
-        [pscustomobject]@{ Token = '~word';           Meaning = 'most recent cmd starting with word';        Bash = '!word' }
-        [pscustomobject]@{ Token = '~word:$ etc';     Meaning = 'same selectors, applied to matched cmd';    Bash = '!word:$ etc' }
-        [pscustomobject]@{ Token = '~~:gs/old/new/';  Meaning = 'every "old" replaced by "new" (no / allowed in old/new)'; Bash = '!!:gs/old/new/' }
+        [pscustomobject]@{ Token = '@@';             Meaning = 'last command';                              Bash = '!!' }
+        [pscustomobject]@{ Token = '@$';              Meaning = 'last word of last command';                 Bash = '!$' }
+        [pscustomobject]@{ Token = '@*';              Meaning = 'all args of last command';                  Bash = '!*' }
+        [pscustomobject]@{ Token = '@-N';             Meaning = 'Nth-previous command';                      Bash = '!-N' }
+        [pscustomobject]@{ Token = '@-N:$';           Meaning = 'last word of Nth-previous command';         Bash = '!-N:$' }
+        [pscustomobject]@{ Token = '@-N:^';           Meaning = 'first arg of Nth-previous command';         Bash = '!-N:^' }
+        [pscustomobject]@{ Token = '@-N:*';           Meaning = 'all args of Nth-previous command';          Bash = '!-N:*' }
+        [pscustomobject]@{ Token = '@-N:K';           Meaning = 'word K (0=cmd name) of Nth-previous cmd';   Bash = '!-N:K' }
+        [pscustomobject]@{ Token = '@-N:A-B';         Meaning = 'word range A..B of Nth-previous command';   Bash = '!-N:A-B' }
+        [pscustomobject]@{ Token = '@-N:K*';          Meaning = 'words K..end of Nth-previous command';      Bash = '!-N:K*' }
+        [pscustomobject]@{ Token = '@N';              Meaning = 'history event N by absolute Id';            Bash = '!N' }
+        [pscustomobject]@{ Token = '@N:$ etc';        Meaning = 'same selectors, applied to event N';        Bash = '!N:$ etc' }
+        [pscustomobject]@{ Token = '@[text]';         Meaning = 'most recent cmd containing text anywhere';  Bash = '!?text?' }
+        [pscustomobject]@{ Token = '@[text]:$ etc';   Meaning = 'same selectors, applied to matched cmd';    Bash = '!text:$ etc' }
+        [pscustomobject]@{ Token = '@word';           Meaning = 'most recent cmd starting with word';        Bash = '!word' }
+        [pscustomobject]@{ Token = '@word:$ etc';     Meaning = 'same selectors, applied to matched cmd';    Bash = '!word:$ etc' }
+        [pscustomobject]@{ Token = '@@:gs/old/new/';  Meaning = 'every "old" replaced by "new" (no / allowed in old/new)'; Bash = '!!:gs/old/new/' }
         [pscustomobject]@{ Token = '^old^new^';       Meaning = 'last command, first "old" replaced by "new"'; Bash = '^old^new^' }
     )
 
@@ -178,32 +178,32 @@ function Show-BangHistoryHelp {
 function Expand-BangHistory {
     <#
     .SYNOPSIS
-        Expands ~ bang-history tokens in a line of PowerShell input.
+        Expands @ bang-history tokens in a line of PowerShell input.
 
     .DESCRIPTION
-        Bash-style bang-history expansion for PowerShell, using ~ as the
+        Bash-style bang-history expansion for PowerShell, using @ as the
         sigil instead of ! (which PowerShell reserves as a logical operator).
         See Show-BangHistoryHelp for the full token/selector reference table.
 
     .PARAMETER Line
-        The raw input line, possibly containing one or more ~ tokens.
+        The raw input line, possibly containing one or more @ tokens.
 
     .EXAMPLE
-        Expand-BangHistory -Line '~~'
+        Expand-BangHistory -Line '@@'
         Expands to the full text of the last executed command.
 
     .EXAMPLE
-        Expand-BangHistory -Line 'git add ~$'
-        Expands ~$ to the last word of the last command, leaving the rest
+        Expand-BangHistory -Line 'git add @$'
+        Expands @$ to the last word of the last command, leaving the rest
         of the line untouched.
 
     .EXAMPLE
-        Expand-BangHistory -Line 'echo ~*'
-        Expands ~* to every argument (excluding the command name itself)
+        Expand-BangHistory -Line 'echo @*'
+        Expands @* to every argument (excluding the command name itself)
         of the last command.
 
     .EXAMPLE
-        Expand-BangHistory -Line '~[docker]:^'
+        Expand-BangHistory -Line '@[docker]:^'
         Finds the most recent command containing "docker" and returns its
         first argument.
 
@@ -218,7 +218,7 @@ function Expand-BangHistory {
     # implied re-run happens on the user's confirming second Enter, not here.
     if ($Line -match '^\^([^\^]+)\^([^\^]*)\^?$') {
         $findText = $Matches[1]; $replaceText = $Matches[2]
-        $last = Get-BangCommandLine -Ref '~~'
+        $last = Get-BangCommandLine -Ref '@@'
         if ($last) {
             $rx = [regex]::new([regex]::Escape($findText))
             return $rx.Replace($last, $replaceText, 1)   # first occurrence only
@@ -227,10 +227,10 @@ function Expand-BangHistory {
     }
 
     # normalize the !$-equivalent and !*-equivalent shorthands first
-    $Line = $Line -replace '~\$', '~~:$'
-    $Line = $Line -replace '~\*', '~~:*'
+    $Line = $Line -replace '@\$', '@@:$'
+    $Line = $Line -replace '@\*', '@@:*'
 
-    $refPattern = '~~|~-\d+|~\d+|~\[[^\]]+\]|~[A-Za-z_][\w.\-\/]*'
+    $refPattern = '@@|@-\d+|@\d+|@\[[^\]]+\]|@[A-Za-z_][\w.\-\/]*'
     $selPattern = '\$|\^|\*|\d+\*|\d+(?:-\d+)?|gs/[^/]*/[^/]*/?'
     $pattern = "(?<ref>$refPattern)(?::(?<sel>$selPattern))?"
 
@@ -260,9 +260,9 @@ function Resolve-BangHistoryExpansion {
 
         This exists as its own function, called by both the Enter key
         handler and by tests, specifically so the two can't drift apart.
-        The key handler used to gate on "does Line contain a literal ~"
+        The key handler used to gate on "does Line contain a literal @"
         before bothering to call Expand-BangHistory — a reasonable-looking
-        optimization that quietly broke ^old^new^, which contains no ~ at
+        optimization that quietly broke ^old^new^, which contains no @ at
         all. That token type resolved correctly in Expand-BangHistory the
         whole time; the guard in front of it just never let it through in
         a real session. Routing both callers through one decision function
