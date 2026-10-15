@@ -148,3 +148,35 @@ PS> @:gs/v1.2.3/v1.2.4/
 ## License
 
 MIT
+## Brace Expansion Examples
+
+Brace expansion generates arbitrary strings or file paths using pattern matching without invoking external commands.
+
+### 1. Basic Sequence Expansion
+Generate numbers or single-character ranges:
+
+`ash
+# Numeric sequences
+echo {1..5}
+# Output: 1 2 3 4 5
+
+# Letter ranges
+echo {a..e}
+# Output: a b c d e
+
+# Padded numbers
+echo {01..05}
+# Output: 01 02 03 04 05
+
+# Stepped sequences
+echo {0..10..2}
+# Output: 0 2 4 6 8 10
+Streamline directory structure creation and bulk file manipulation:
+
+`ash
+# Create directory trees in one command
+mkdir -p project/{src,bin,docs,tests/{unit,integration}}
+
+# Quick file backup
+cp config.json{,.bak}
+# Expands to: cp config.json config.json.bak
